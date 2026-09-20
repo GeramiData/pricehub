@@ -16,12 +16,13 @@ reference (parameters in detail, sample payloads, field notes).
 | `technical` | [`GET /v1/technical/prices/suppliers/latest`](endpoints-technical.md#get-v1technicalpricessupplierslatest) | `prices:read` | Latest supplier buy/sell quotes, same item shape as the platform feed | list |
 | `technical` | [`GET /v1/technical/prices/stats`](endpoints-technical.md#get-v1technicalpricesstats) | `prices:read` | Cross-source summary (mean/median/σ-trimmed/min/max) per (asset, currency), Gerami separate | list |
 | `reports` | [`GET /v1/reports/platform-compare`](endpoints-reports.md#get-v1reportsplatform-compare) | `reports:read` | Competitive report for one asset + a ready-to-post Persian Telegram message | object |
-| `seo` | [`GET /v1/seo/price-page`](endpoints-seo.md#get-price-page) | `prices:read` | The site's gold & coin price table (18k row rebuilt from the gerami source) | list |
 | — | [`GET /health`](health.md#get-health--liveness) | none | Liveness — the process is up | object |
 | — | [`GET /health/ready`](health.md#get-healthready--readiness) | none | Readiness — DB + Redis reachable | object |
 
-A key is scoped to **one partner**: an `seo` key calling a `/v1/technical/*`
-route gets `403`, not data. See [authentication.md](authentication.md).
+A key is scoped to **one partner**: a `reports` key calling a `/v1/technical/*`
+route gets `403`, not data — see [authentication.md](authentication.md). The
+`seo` partner exists but currently mounts no route, see
+[endpoints-seo.md](endpoints-seo.md).
 
 ## Query parameters at a glance
 
@@ -34,7 +35,6 @@ filter" — e.g. no `asset` returns every asset.
 | `prices/suppliers/latest` | `source` · `asset` |
 | `prices/stats` | `asset` · `currency` · `max_age_seconds` (30–3600, default `180`) · `role` (`platform`\|`reference`) |
 | `reports/platform-compare` | `asset` **required** · `currency` (default `irt`) · `max_age_seconds` (default `180`) · `exclude` (comma-separated source slugs) |
-| `seo/price-page` | — |
 
 ### The two input keys
 
@@ -67,7 +67,6 @@ fixed assumption — leave it out and each row tells you its own currency.
 | "where does the market sit" — mean/median/outlier-trimmed | `prices/stats?asset=gold-18k&currency=irt` |
 | the same summary for **everything** at once | `prices/stats` |
 | a ready Persian message ranking Gerami against competitors | `reports/platform-compare?asset=gold-18k` |
-| the public price table for the website | `seo/price-page` |
 
 ## What every response looks like
 
