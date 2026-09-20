@@ -1,85 +1,34 @@
 # SEO partner endpoints
 
 Base: `https://api.gerami.online/v1/seo`
-Auth: `X-API-Key` for a key on partner `seo` (scope `prices:read`).
+Auth: `X-API-Key` for a key on partner `seo`.
 One-page index of every endpoint: [endpoints.md](endpoints.md).
 
-`price-page` is the partner's **only** endpoint. Reference implementations of a
-featured-price feed and a news feed live in
-[`service.py`](../../app/partners/seo/service.py) — already on the shared
-response standard — but are deliberately **not enabled**; enabling one means
-adding a route in `router.py` and the matching scope on the key.
+## Status: no endpoint is mounted
+
+The partner and its key still exist, but `/v1/seo/*` currently returns `404` —
+[`router.py`](../../app/partners/seo/router.py) defines no route.
+
+Its single endpoint used to be `GET /price-page`, a mirror of the gold and coin
+tables scraped from `talasea.ir/gold-price` into `seo_schm.talasea_gold_prices`.
+That crawler, its schema and this feed were removed: the coin prices it existed
+to publish are being brought into the normal `price_schm` catalog instead, from
+real market sources, so the SEO feed can be served by the same standard as every
+other partner rather than from a scraped copy of someone else's page.
+
+## Bringing the feed back
+
+Reference implementations are preserved in
+[`service.py`](../../app/partners/seo/service.py), already on the shared
+response standard:
+
+| Function | Serves | Reads |
+|---|---|---|
+| `featured_prices` | latest platform quote per curated asset — `SEO_FEATURED_ASSETS` already lists `coin-emami`, `coin-bahar`, `coin-half`, `coin-quarter` | `price_schm` |
+| `recent_news` | recent metals news headlines | `news_schm` |
+
+Enabling one is a route in `router.py` behind
+`require_partner("seo", scope=…)` plus the matching scope on the key — the same
+two-line change any other partner endpoint takes.
 
 Responses follow the shared standard — see [responses.md](responses.md).
-
-## `GET /price-page`
-
-The site's price page: every row of `seo_schm.talasea_gold_prices` (the gold and
-coin tables scraped from talasea.ir/gold-price), latest snapshot only. Items are
-returned in on-page order — the gold table first, then coins.
-
-**Scope:** `prices:read`
-
-### 18k gold is served from the Gerami source
-
-For the `geram18` row (طلای ۱۸ عیار, one gram), the numeric fields are **rebuilt
-from the Gerami source** — which is already crawled into `price_schm` — instead
-of the talasea scrape:
-
-| Field | Source for `geram18` |
-|-------|----------------------|
-| `current_price` | Gerami — latest 18k price |
-| `low_price` / `high_price` | Gerami — min/max over the last 24h |
-| `change_1d_percent` | Gerami — vs ~24h ago |
-| `change_30d_percent` | Gerami — vs ~30d ago |
-| `name`, `unit`, `category` | stored (talasea) — unchanged |
-| `weekly_chart_path` | stored (talasea) — the sparkline is a talasea render, not in the gerami feed |
-
-If Gerami has no 18k history (e.g. a fresh environment), the stored talasea
-values are served unchanged and `gold_18k_source` reports `"talasea"`. Every
-other row always comes from the talasea scrape.
-
-### Response
-
-Each item carries the standard `source` ref naming which producer it came from
-(`gerami` for the 18k row, `talasea` for the rest). Its `category`/`slug`/`name`/
-`unit` are the scraped page's own columns — not rows of the `assets`/
-`currencies` catalogs — so there is no asset or currency ref on this endpoint.
-
-```json
-{
-  "success": true,
-  "message": "OK",
-  "responseCode": 200,
-  "data": {
-    "items": [
-      {
-        "source": { "slug": "gerami", "title_fa": "گرمی", "title_en": "Gerami", "role": "platform" },
-        "category": "gold",
-        "slug": "geram18",
-        "name": "طلای ۱۸ عیار",
-        "unit": "تومان",
-        "current_price": "18071900.0000",
-        "low_price": "17900000.0000",
-        "high_price": "18100000.0000",
-        "change_1d_percent": "1.528",
-        "change_30d_percent": "15.108",
-        "weekly_chart_path": "M2,44...",
-        "crawled_at": "2026-07-26T12:26:46.855151+00:00"
-      }
-    ],
-    "count": 13,
-    "gold_18k_source": "gerami",
-    "generated_at": "2026-07-26T12:30:00.000000+00:00"
-  }
-}
-```
-
-Prices/percentages are exact decimal **strings** (never floats — see
-[responses.md](responses.md)).
-
-### Example
-
-```bash
-curl -H "X-API-Key: $SEO_KEY" https://api.gerami.online/v1/seo/price-page
-```

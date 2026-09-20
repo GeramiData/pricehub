@@ -117,39 +117,6 @@ Both return the identical item shape:
 For a supplier row only the source differs — `"role": "supplier"`, `bid` is its
 خرید and `ask` its فروش, and `is_single_rate` is always `false`.
 
-### Example — `GET /v1/seo/price-page`
-
-A mirror of the talasea gold/coin tables, so its items keep the scraped page's
-own columns (`category`, `slug`, `name`, `unit`) — those are not rows of the
-`assets` / `currencies` catalogs and have no ref. Each item does carry the
-standard `source` ref naming which producer it came from:
-
-```json
-{
-  "data": {
-    "items": [
-      {
-        "source": { "slug": "gerami", "title_fa": "گرمی", "title_en": "Gerami", "role": "platform" },
-        "category": "gold",
-        "slug": "geram18",
-        "name": "طلای ۱۸ عیار",
-        "unit": "تومان",
-        "current_price": "18071900.0000",
-        "low_price": "17900000.0000",
-        "high_price": "18100000.0000",
-        "change_1d_percent": "1.528",
-        "change_30d_percent": "15.108",
-        "weekly_chart_path": "M2,44...",
-        "crawled_at": "2026-07-26T12:26:46.855151+00:00"
-      }
-    ],
-    "count": 13,
-    "gold_18k_source": "gerami",
-    "generated_at": "2026-07-26T12:30:00.000000+00:00"
-  }
-}
-```
-
 ### Example — `/v1/technical/prices/stats`
 
 A list like the others: one item per (asset, currency) pair, each headed by the

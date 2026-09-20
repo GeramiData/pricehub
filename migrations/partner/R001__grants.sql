@@ -33,7 +33,7 @@ ALTER ROLE "partner_api_usr" WITH LOGIN PASSWORD :partner_pw;
 
 -- Resolve unqualified names (price_latest, sources, …) into the data schemas.
 ALTER ROLE "partner_api_usr"
-    SET search_path = "price_schm", "news_schm", "seo_schm", "partner_schm", public;
+    SET search_path = "price_schm", "news_schm", "partner_schm", public;
 
 -- Connect + schema usage.
 GRANT CONNECT ON DATABASE pricing_db TO "partner_api_usr";
@@ -56,17 +56,3 @@ GRANT UPDATE ("last_used_at") ON "partner_schm"."partner_api_keys" TO "partner_a
 ALTER DEFAULT PRIVILEGES FOR ROLE "copilot_usr" IN SCHEMA "price_schm", "news_schm"
     GRANT SELECT ON TABLES TO "partner_api_usr";
 
--- SEO price-page table (seo_schm.talasea_gold_prices) — read-only, for the
--- /v1/seo/price-page feed. The schema is created by the SEO crawler's OWN
--- migration (pricing-copilot crawlers/postgres/migrations/seo), which isn't
--- applied in every environment, so guard on its existence and skip silently
--- when it's absent — this keeps R001 runnable anywhere.
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'seo_schm') THEN
-        GRANT USAGE ON SCHEMA "seo_schm" TO "partner_api_usr";
-        GRANT SELECT ON ALL TABLES IN SCHEMA "seo_schm" TO "partner_api_usr";
-        ALTER DEFAULT PRIVILEGES FOR ROLE "copilot_usr" IN SCHEMA "seo_schm"
-            GRANT SELECT ON TABLES TO "partner_api_usr";
-    END IF;
-END $$;

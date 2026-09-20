@@ -49,7 +49,7 @@ Why a separate service rather than a router inside the copilot backend:
 
 ## Request lifecycle
 
-For `GET https://api.gerami.online/v1/seo/price-page` with header
+For `GET https://api.gerami.online/v1/technical/prices/platforms/latest` with header
 `X-API-Key: ph_live_…`:
 
 1. **TLS proxy** terminates HTTPS and forwards to `127.0.0.1:8100`.
@@ -57,7 +57,7 @@ For `GET https://api.gerami.online/v1/seo/price-page` with header
    - reads `X-API-Key`; hashes it (SHA-256); looks up an **active** key on an
      **active** partner (one indexed query);
    - checks **tenant isolation** — the key's partner slug must equal the module
-     (`seo`), else `403`;
+     (`technical`), else `403`;
    - checks the route's **scope** against the key's scopes (relaxed while internal);
    - checks **rate limits** in Redis (per-second + per-minute), else `429`;
    - stashes a `PartnerContext` on `request.state`.

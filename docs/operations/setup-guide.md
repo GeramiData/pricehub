@@ -197,17 +197,17 @@ SQL
 ## 7. Verify end to end
 
 ```bash
-KEY='ph_live_...'   # the seo key you just minted
+KEY='ph_live_...'   # the technical key you just minted
 
 curl -s -H "X-API-Key: $KEY" \
-  "https://api.gerami.online/v1/seo/price-page" | jq
+  "https://api.gerami.online/v1/technical/prices/platforms/latest" | jq
 
-# wrong partner → 403 (an seo key on a technical route)
+# wrong partner → 403 (a technical key on a reports route)
 curl -s -H "X-API-Key: $KEY" \
-  "https://api.gerami.online/v1/technical/prices/platforms/latest" | jq .responseCode
+  "https://api.gerami.online/v1/reports/platform-compare?asset=gold-18k" | jq .responseCode
 
 # no key → 401
-curl -s "https://api.gerami.online/v1/seo/price-page" | jq .responseCode
+curl -s "https://api.gerami.online/v1/technical/prices/platforms/latest" | jq .responseCode
 ```
 
 Then confirm usage was recorded:

@@ -59,7 +59,7 @@ async def record_usage(request: Request, call_next):
 
     The auth dependency stashes a PartnerContext on request.state only once a key
     has passed auth + rate limiting, so its presence means "a real partner call
-    was served." We use the matched route template (e.g. /v1/seo/price-page)
+    was served." We use the matched route template (e.g. /v1/technical/prices/stats)
     as the stable endpoint label so usage groups cleanly.
     """
     response = await call_next(request)

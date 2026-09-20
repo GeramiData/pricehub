@@ -81,9 +81,9 @@ configuration change on the crawler side, not an API change.
 | `coin-quarter` | ربع سکه | Quarter Gold Coin | unit | `COIN_QUARTER` | — | **no feed** | 0 |
 | `coin-gerami` | سکه گرمی | Gerami Gold Coin | unit | `COIN_GERAMI` | — | **no feed** | 0 |
 
-For a coin price page today, use the SEO feed
-([`GET /v1/seo/price-page`](endpoints-seo.md)) — it mirrors a scraped gold/coin
-table and is independent of this catalog.
+The coins are catalogued but **not crawled yet** — no source feeds them, so no
+endpoint returns a coin quote. They become available through the normal price
+feeds as soon as a source is wired up for them.
 
 ## Currencies (ارز آزاد)
 
