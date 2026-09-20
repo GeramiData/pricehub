@@ -75,3 +75,61 @@ Roll back by re-running the deploy with `image_tag = git-<older-sha>`.
 - **Redis** has no host port and is password-protected; it is reachable only by
   `pricehub` over `pricing-net`. `maxmemory 128mb` + `allkeys-lru` cap its
   footprint; counters are ephemeral so persistence is disabled.
+
+## The OpenAPI reference is behind a password
+
+`/docs`, `/redoc` and `/openapi.json` come from FastAPI and were reachable from
+the internet without a key until 2026-09-20 — the full route list, every query
+parameter and every response schema. The data endpoints were never exposed
+(they answer `401` without `X-API-Key`), but the map to them was.
+
+`deploy/nginx/pricehub-docs.conf` is the gate: one regex `location` that puts
+those four paths behind HTTP Basic and proxies them on. It is installed as an
+nginx snippet and pulled into the vhost with one `include`, so updating it later
+is a single `scp` with no vhost edit.
+
+### Install (once)
+
+```bash
+# 1) the snippet
+sudo install -m 644 -o root -g root pricehub-docs.conf \
+     /etc/nginx/snippets/pricehub-docs.conf
+
+# 2) the credentials — printed once, never stored anywhere else
+DOCS_USER=gerami_docs
+DOCS_PASS=$(openssl rand -base64 18)
+printf '%s:%s\n' "$DOCS_USER" "$(openssl passwd -6 "$DOCS_PASS")" \
+  | sudo tee /etc/nginx/.htpasswd-pricehub-docs >/dev/null
+sudo chown root:www-data /etc/nginx/.htpasswd-pricehub-docs
+sudo chmod 640          /etc/nginx/.htpasswd-pricehub-docs
+echo "user: $DOCS_USER"; echo "pass: $DOCS_PASS"
+
+# 3) one line inside the 443 server block of
+#    /etc/nginx/sites-available/api.gerami.online
+#        include /etc/nginx/snippets/pricehub-docs.conf;
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+The htpasswd file is a **credential**: server-only, `640 root:www-data` (nginx
+workers run as `www-data`), and deliberately absent from this repo. The hash is
+`openssl passwd -6` (SHA-512 crypt), which nginx reads through `crypt_r` on
+glibc; if a future host ever rejects it, `openssl passwd -apr1` is the portable
+fallback nginx handles natively.
+
+### Rotate the password
+
+Re-run step 2 on its own and reload nginx. No image rebuild, no deploy.
+
+### Verify from off-box
+
+```bash
+for p in /openapi.json /docs /redoc /docs/oauth2-redirect; do
+  printf '%-24s -> %s\n' "$p" \
+    "$(curl -s -o /dev/null -w '%{http_code}' https://api.gerami.online$p)"
+done          # all four must be 401
+
+curl -s -o /dev/null -w 'with creds -> %{http_code}\n' \
+     -u "$DOCS_USER:$DOCS_PASS" https://api.gerami.online/openapi.json   # 200
+curl -s -o /dev/null -w 'health     -> %{http_code}\n' \
+     https://api.gerami.online/health                                    # 200, still open
+```
